@@ -1,0 +1,36 @@
+name: Executar Coleta Mensal de Dados
+
+on:
+  schedule:
+    # Roda às 03:00 da manhã no dia 1 de cada mês (coletando o mês anterior)
+    - cron: '0 3 1 * *'
+  workflow_dispatch: # Permite executar a coleta manualmente no GitHub
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Baixar código do repositório
+      uses: actions/checkout@v4
+
+    - name: Configurar o Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.10'
+
+    - name: Instalar dependências
+      run: |
+        pip install -r requirements.txt
+
+    - name: Executar Script de Coleta
+      env:
+        URL_CAMARA_DESPESAS: ${{ secrets.URL_CAMARA_DESPESAS }}
+      run: python coleta_tratamento.py
+
+    - name: Salvar e subir novos dados para o GitHub
+      run: |
+        git config --global user.name 'Automação GitHub'
+        git config --global user.email 'actions@github.com'
+        git add data/
+        git diff --staged --quiet || git commit -m "Atualização automática: $(date +'%Y-%m-%d')"
+        git push
