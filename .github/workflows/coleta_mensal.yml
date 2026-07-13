@@ -25,7 +25,7 @@ jobs:
     - name: Executar Script de Coleta
       env:
         URL_CAMARA_DESPESAS: ${{ secrets.URL_CAMARA_DESPESAS }}
-      run: python coleta_tratamento.py
+      run: python src/coleta_tratamento.py
 
     - name: Salvar e subir novos dados para o GitHub
       run: |
