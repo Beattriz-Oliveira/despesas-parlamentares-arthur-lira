@@ -130,7 +130,7 @@ if __name__ == "__main__":
     # Monta a string de conexão com a senha codificada automaticamente
     senha = quote_plus(os.getenv("SUPABASE_PASSWORD"))
     host = os.getenv("SUPABASE_HOST")
-    connection_string = f"postgresql://postgres:{senha}@{host}:5432/postgres"
+    connection_string = f"postgresql://postgres.nbfrxitnxzlsatvxaeic:{senha}@{host}:6543/postgres"
 
     # Coleta
     dados_brutos = coleta_dados(deputado_id, anos)
