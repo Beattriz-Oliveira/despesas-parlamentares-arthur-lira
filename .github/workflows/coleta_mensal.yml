@@ -25,6 +25,8 @@ jobs:
     - name: Executar Script de Coleta
       env:
         URL_CAMARA_DESPESAS: ${{ secrets.URL_CAMARA_DESPESAS }}
+        SUPABASE_PASSWORD: ${{ secrets.SUPABASE_PASSWORD }}
+        SUPABASE_HOST: ${{ secrets.SUPABASE_HOST }}
       run: python src/coleta_tratamento.py
 
     - name: Salvar e subir novos dados para o GitHub

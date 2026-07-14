@@ -10,6 +10,8 @@ from tabulate import tabulate
 from datetime import datetime
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
+from sqlalchemy import create_engine
+from urllib.parse import quote_plus
 
 if datetime.now() > datetime(2027, 1, 1):
     print("Prazo do projeto encerrado. Automação desativada.")
@@ -113,19 +115,22 @@ def enriquecimento_dados(df):
 
     return df
 
-def amazenamento_dado(df, caminho_bd):
+def amazenamento_dado(df, connection_string):
     print("Salvando os dados no banco de dados ...")
-
-    conexao = sqlite3.connect(caminho_bd)
-    df.to_sql('tb_despesas', conexao, if_exists='replace', index=False)
-    conexao.close()
-
-    print(f"Dados armazenados com sucesso no banco: {caminho_bd} na tabela 'tb_despesas'!")
+    engine = create_engine(connection_string)
+    df.to_sql('tb_despesas', engine, if_exists='replace', index=False)
+    engine.dispose()
+    print("Dados armazenados com sucesso no Supabase!")
 
 if __name__ == "__main__":
 
     deputado_id = 160541
-    anos = range(2023, 2027)  # Apenas anos com dados reais
+    anos = range(2023, 2027)
+
+    # Monta a string de conexão com a senha codificada automaticamente
+    senha = quote_plus(os.getenv("SUPABASE_PASSWORD"))
+    host = os.getenv("SUPABASE_HOST")
+    connection_string = f"postgresql://postgres:{senha}@{host}:5432/postgres"
 
     # Coleta
     dados_brutos = coleta_dados(deputado_id, anos)
@@ -136,4 +141,4 @@ if __name__ == "__main__":
 
         dados_limpos = tratamento_dados(dados_brutos)
         dados_finais = enriquecimento_dados(dados_limpos)
-        amazenamento_dado(dados_finais, "data/camara_dados.db")
+        amazenamento_dado(dados_finais, connection_string)
