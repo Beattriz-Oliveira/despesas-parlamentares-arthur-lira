@@ -17,7 +17,7 @@ Este projeto coleta, trata, enriquece e analisa os registros de pagamentos e ree
 
 ## 📊 Dashboard
 
-[![Preview do Dashboard](assets/dashboard_preview.png)](https://app.powerbi.com/view?r=eyJrIjoiMzdjNGY1OGItNjI1OS00YzlkLThiYjEtMzQ2YWRkOTEzOGVhIiwidCI6IjkwNzg5MzgzLTExYjMtNGQ0My05YjI4LWNlNDM1M2IyZDg1NSJ9)
+![Preview do Dashboard](assets/dashboard_preview.png)
 
 🔗 **[Acesse o Dashboard no Power BI Service](https://app.powerbi.com/view?r=eyJrIjoiMzdjNGY1OGItNjI1OS00YzlkLThiYjEtMzQ2YWRkOTEzOGVhIiwidCI6IjkwNzg5MzgzLTExYjMtNGQ0My05YjI4LWNlNDM1M2IyZDg1NSJ9)**
 
