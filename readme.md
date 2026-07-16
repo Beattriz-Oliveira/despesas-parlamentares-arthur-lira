@@ -26,7 +26,7 @@ Este projeto coleta, trata, enriquece e analisa os registros de pagamentos e ree
 ## 🔄 Ciclo de Vida dos Dados
 
 ```
-Coleta (API) → Armazenamento Bruto (JSON) → Limpeza (CSV) → Enriquecimento (CSV) → Armazenamento (SQLite) → Visualização (Power BI) → Decisão (Narrativa)
+Coleta (API) → Armazenamento Bruto (JSON) → Limpeza (CSV) → Enriquecimento (CSV) → Armazenamento (PostgreSQL) → Visualização (Power BI) → Decisão (Narrativa)
 ```
 
 | Etapa | O que foi feito |
@@ -35,7 +35,7 @@ Coleta (API) → Armazenamento Bruto (JSON) → Limpeza (CSV) → Enriquecimento
 | **Armazenamento Bruto** | Dados salvos em JSON antes de qualquer transformação |
 | **Limpeza** | Remoção de colunas desnecessárias, tratamento de nulos e padronização de tipos |
 | **Enriquecimento** | Criação das colunas `faixaValor`, `trimestre` e `nomeMes` |
-| **Armazenamento** | Persistência final em banco de dados SQLite |
+| **Armazenamento** | Persistência final em banco de dados PostgreSQL no Supabase |
 | **Visualização** | Dashboard interativo no Power BI com DAX avançado |
 | **Decisão** | Narrativa dinâmica com recomendação baseada nos dados |
 
@@ -46,9 +46,9 @@ Coleta (API) → Armazenamento Bruto (JSON) → Limpeza (CSV) → Enriquecimento
 - **Python** — coleta, limpeza e enriquecimento dos dados
   - `requests` — requisições à API
   - `pandas` — transformação e tratamento
-  - `sqlite3` — persistência no banco de dados
+  - `sqlalchemy` + `psycopg2` — conexão e persistência no banco PostgreSQL
   - `python-dotenv` — gerenciamento de variáveis de ambiente
-- **SQLite** — armazenamento estruturado dos dados tratados
+- **Supabase (PostgreSQL)** — armazenamento estruturado dos dados tratados na nuvem
 - **Power BI** — modelagem, DAX e visualização
 - **GitHub Actions** — automação mensal da coleta de dados
 
@@ -101,25 +101,32 @@ O script `coleta_tratamento.py` executa as seguintes etapas em sequência:
 - `trimestre` — trimestre da despesa
 - `nomeMes` — nome do mês por extenso
 
-**5. Armazenamento** — Dados finais persistidos na tabela `tb_despesas` do banco SQLite `data/camara_dados.db`.
+**5. Armazenamento** — Dados finais persistidos na tabela `tb_despesas` no banco PostgreSQL hospedado no Supabase, acessível pelo Power BI via CSV versionado no repositório.
 
 ---
 
 ## 📊 Principais Insights
 
 - Em **2026**, o deputado registrou um crescimento expressivo de gastos em relação aos anos anteriores — padrão consistente com anos eleitorais, onde deputados tendem a aumentar sua movimentação
-- **Passagem Aérea** e **Locação de Veículos** concentram a maior parte do valor gasto, mesmo representando poucos registros — gastos grandes são minoria em quantidade, mas dominam o valor total
+- **Passagem Aérea** e **Locação de Veículos** concentram a maior parte do valor gasto — 
+  em 2023, 2024 e 2025 os gastos eram predominantemente de pequeno valor, mas em 2026, 
+  ano eleitoral, os gastos de alto valor passaram a dominar tanto em quantidade quanto 
+  em valor total, evidenciando uma mudança expressiva no padrão de uso da cota
 - A locadora **OK Locadora de Veículos Ltda** aparece como fornecedora recorrente ao longo dos anos, sugerindo preferência ou contrato informal
 - Em **2024** (ano eleitoral para outros cargos), houve aumento de gastos nos meses de campanha — indicando possível apoio aos aliados de partido
 - **Recomendação:** a Câmara dos Deputados deveria negociar contratos ou pacotes de milhas/crédito em lote com os principais fornecedores para reduzir o custo por transação com dinheiro público
 
 ---
 
-## 🤖 Automação Mensal
+## 🤖 Automação
 
-O script de coleta é executado automaticamente todo **dia 1 de cada mês** via GitHub Actions, coletando os dados do mês anterior encerrado. A automação permanece ativa até **01/01/2027**, quando coleta os dados de dezembro de 2026 e encerra o ciclo do projeto.
+O pipeline de dados é totalmente automatizado em duas camadas:
 
-O workflow está em `.github/workflows/coleta_mensal.yml` e pode ser disparado manualmente pelo GitHub a qualquer momento via `workflow_dispatch`.
+**Coleta mensal — GitHub Actions**
+O script de coleta é executado automaticamente todo **dia 1 de cada mês**, coletando os dados do mês anterior encerrado e atualizando os arquivos CSV no repositório e a tabela no Supabase. A automação permanece ativa até **01/01/2027**, quando coleta os dados de dezembro de 2026 e encerra o ciclo do projeto.
+
+**Atualização do dashboard — Power BI Service**
+O dataset no Power BI Service é atualizado automaticamente todo **domingo às 03:30**, garantindo que o dashboard reflita sempre os dados mais recentes disponíveis no repositório.
 
 ---
 
@@ -131,12 +138,21 @@ git clone https://github.com/Beattriz-Oliveira/despesas-parlamentares-arthur-lir
 cd despesas-parlamentares-arthur-lira
 ```
 
-**2. Instale as dependências**
+**2. Configure as variáveis de ambiente**
+
+Crie um arquivo `.env` na raiz do projeto com as seguintes variáveis:
+```
+URL_CAMARA_DESPESAS=https://dadosabertos.camara.leg.br/api/v2/deputados/160541/despesas
+SUPABASE_HOST=seu_host_supabase
+SUPABASE_PASSWORD=sua_senha_supabase
+```
+
+**3. Instale as dependências**
 ```bash
 pip install -r requirements.txt
 ```
 
-**3. Execute o pipeline**
+**4. Execute o pipeline**
 ```bash
 python src/coleta_tratamento.py
 ```
@@ -149,6 +165,7 @@ Os arquivos gerados serão salvos automaticamente na pasta `data/`.
 
 - A API da Câmara retorna no máximo 100 registros por requisição sem paginação adicional. Os anos com exatamente 100 registros podem estar incompletos. Essa limitação está documentada e não impacta os principais insights, dado o volume restante.
 - O arquivo `.db` não está versionado no repositório por boas práticas — ele é gerado localmente ao executar o script.
+- A atualização do dashboard no Power BI Service é semanal (todo domingo), portanto pode haver uma diferença de alguns dias entre a coleta do dia 1 e a atualização do visual publicado.
 
 ---
 
